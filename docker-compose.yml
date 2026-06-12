@@ -1,12 +1,10 @@
-version: "5.1.3"
-
 services:
-
   backend:
     build: .
-    command: python manage.py runserver 0.0.0.0:8000
+    command: python core/manage.py runserver 0.0.0.0:8000
     ports:
-      - "8000:8000"
+      - "9000:8000"
     volumes:
       - .:/app
-    
+    environment:
+      - PYTHONPATH=/app

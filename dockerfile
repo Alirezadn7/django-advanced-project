@@ -1,21 +1,18 @@
 FROM python:3.12
 
-RUN mkdir /app
-WORKDIR /app
-
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+WORKDIR /app
 
-RUN pip install -i https://mirror-pypi.runflare.com/simple --upgrade pip
+RUN pip install --upgrade pip
 
-COPY requirements.txt  /app/
-RUN pip install -i https://mirror-pypi.runflare.com/simple -r requirements.txt
+COPY requirements.txt /app/
+RUN pip install -r requirements.txt
 
 COPY . .
 
+
+ENV PYTHONPATH=/app
+
 EXPOSE 8000
-
-WORKDIR /app/core
-
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
