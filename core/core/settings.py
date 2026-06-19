@@ -121,4 +121,4 @@ STATIC_URL = "static/"
 
 
 # user manager config
-AUTH_USER_MODEL = 'accounts.CustomUser'   # replace with your custom 
+AUTH_USER_MODEL = 'accounts.User'   

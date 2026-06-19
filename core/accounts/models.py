@@ -2,11 +2,13 @@ from django.contrib.auth.models import AbstractBaseUser , PermissionsMixin
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 from .managers import CustomUserManager
 
 
-class CustomUser(AbstractBaseUser , PermissionsMixin):
+class User(AbstractBaseUser , PermissionsMixin):
     """
     This is a class to define User model for authentication
     """
@@ -28,4 +30,30 @@ class CustomUser(AbstractBaseUser , PermissionsMixin):
     def __str__(self):
         return self.email
 
-
+class Profile(models.Model):
+    """
+    this is a class to define Profile model
+    """
+    
+    user = models.OneToOneField(User , on_delete=models.CASCADE)
+    first_name = models.CharField(max_length=255 ,  blank=True , default="")
+    last_name = models.CharField(max_length=255 , blank=True , default="")
+    image = models.ImageField(blank=True , null=True)
+    bio = models.TextField(blank=True , default="")
+    
+    def __str__(self):
+        return self.user.email
+    
+@receiver(post_save, sender=User)
+def create_or_update_user_profile(sender, instance, created, **kwargs):
+    """
+    Automatically create a Profile when a new User is created,
+    and keep it in sync on updates.
+    """
+    if created:
+        Profile.objects.create(user=instance)
+    else:
+        Profile.objects.get_or_create(user=instance)
+        instance.profile.save()
+        
+        
