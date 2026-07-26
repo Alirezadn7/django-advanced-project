@@ -28,6 +28,11 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         return user
     
 class ProfileSerializers(serializers.ModelSerializer):
+    """
+    This is a class to serilize my profile model
+    """
+    
+    
     email = serializers.EmailField(source='user.email' , read_only = True)
     
     class Meta:
