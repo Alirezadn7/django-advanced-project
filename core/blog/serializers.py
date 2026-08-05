@@ -5,16 +5,29 @@ from .models import Post,Category
 User = get_user_model()
 
 class AuthorSerializer(serializers.ModelSerializer):
+    """
+    Helper serializer to represent nested author details in blog post API responses
+    """
+    
     class Meta:
         model = User
         fields = ['id' , 'email']
         
 class CategorySerializer(serializers.ModelSerializer):
+    """
+    Serializer for managing blog post categories
+    """
+    
     class Meta:
         model = Category
         fields = ['id' , 'name']
         
 class PostSerializer(serializers.ModelSerializer):
+    """
+    Main serializer for the Post model.
+    Handles data serialization , validation , and nested author representaion.
+    """
+    
     author = AuthorSerializer(read_only = True)   
     
     class Meta:
@@ -23,5 +36,6 @@ class PostSerializer(serializers.ModelSerializer):
             'id' , 'title' , 'content' , 'author' , 'image',
             'category' , 'publish' , 'created_date' , 'updated_date',
             'published_date' 
-        ]    
+        ]
+        read_only_fields = ['created_date' , 'updated_date' , 'published_date']    
         
