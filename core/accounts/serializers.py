@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import Profile
-
+from django.core.exceptions import ObjectDoesNotExist
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 User = get_user_model()
 
@@ -38,3 +39,23 @@ class ProfileSerializers(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = ['id' , 'email' , 'first_name' , 'last_name' , 'image' , 'bio']
+        
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    Custom serializer for JWT token generation.
+    Extends token payload to safely include user identity and profile metadata.
+    """
+    
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        
+        data['id'] = self.user.id
+        data['email'] = self.user.email
+        try:
+            data['first_name'] = self.user.profile.first_name
+        except (ObjectDoesNotExist, AttributeError):
+            
+            data['first_name'] = ""
+        
+        return data     
+                
