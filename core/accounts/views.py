@@ -22,7 +22,7 @@ class ProfileViewset(mixins.RetrieveModelMixin , mixins.UpdateModelMixin , views
         
         return self.request.user.profile
     
-class CustomLoginView(TokenObtainPairView):
+class TokenObtainPairView(TokenObtainPairView):
     """
     Custom JWT authentication view.
     """

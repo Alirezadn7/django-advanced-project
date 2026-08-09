@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import Profile
-from django.core.exceptions import ObjectDoesNotExist
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 User = get_user_model()
@@ -53,8 +52,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data['email'] = self.user.email
         try:
             data['first_name'] = self.user.profile.first_name
-        except (ObjectDoesNotExist, AttributeError):
-            
+        except (AttributeError):    
             data['first_name'] = ""
         
         return data     
