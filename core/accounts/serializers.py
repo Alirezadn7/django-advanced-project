@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from .models import Profile
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import RefreshToken , TokenError
 from django.core.exceptions import ValidationError as DjangoValidationError
 User = get_user_model()
 
@@ -68,4 +69,19 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             data['first_name'] = ""
         
         return data     
-                
+class LogoutSerializer(serializers.Serializer):
+    """
+    Serializer for blacklisting the provided refresh token on user logout
+    """
+    refresh = serializers.CharField()
+    
+    def validate(self , attrs):
+        self.token = attrs['refresh']
+        return attrs
+    
+    def save(self , **kwargs):
+        try :
+            token = RefreshToken(self.token)
+            token.blacklist()
+        except TokenError:
+            raise serializers.ValidationError({"refresh" : "Invalid or expired refresh token."})                
