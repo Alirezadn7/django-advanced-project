@@ -1,8 +1,9 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
 from .models import Profile
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-
+from django.core.exceptions import ValidationError as DjangoValidationError
 User = get_user_model()
 
 
@@ -11,12 +12,23 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     This is a class to serilize my user model
     """
     
-    password = serializers.CharField(write_only = True)
+    password = serializers.CharField(
+        write_only = True , 
+        style = {'input_type' : 'password'}
+        )
     
     class Meta :
         model = User
-        
         fields = ['id' , 'email' , 'password']
+        
+    def validate_password(self , value):
+        try :
+            validate_password(value)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(list(e))    
+        
+        return value
+                
         
     def create(self, validated_data):
         
