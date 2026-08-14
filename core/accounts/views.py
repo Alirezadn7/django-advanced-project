@@ -12,10 +12,11 @@ class RegisterationViewset(mixins.CreateModelMixin , viewsets.GenericViewSet):
     serializer_class = UserRegisterSerializer
     permission_classes = [permissions.AllowAny] # Anyone can register
     
-class ProfileViewset(mixins.RetrieveModelMixin , mixins.UpdateModelMixin , viewsets.GenericViewSet):
+class ProfileAPIView(generics.RetrieveUpdateAPIView):
     """
-    Handles retrieving and updating profile
-    """    
+    Handles retrieving and updating the authenticated user's profile
+    """  
+    queryset = Profile.objects.all() 
     serializer_class = ProfileSerializers
     permission_classes = [permissions.IsAuthenticated]
     
