@@ -85,3 +85,54 @@ class LogoutSerializer(serializers.Serializer):
             token.blacklist()
         except TokenError:
             raise serializers.ValidationError({"refresh" : "Invalid or expired refresh token."})                
+
+class ChangePasswordSerializer(serializers.Serializer):
+    """
+    Serializer for password change endpoint (for authenticated users)
+    """
+    
+    old_password = serializers.CharField(
+        required = True,
+        write_only = True,
+        style={'input_type': 'password'}
+    )
+    
+    new_password = serializers.CharField(
+        required = True,
+        write_only = True,
+        style={'input_type': 'password'}
+    )
+    
+    def validate_old_password(self , value):
+        """
+        check if the old password is correct.
+        """
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Old password is not correct.")
+        return value
+    
+    def validate_new_password(self , value):
+        """
+        Validate new password with Django validators.
+        """
+        try:
+            validate_password(value)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(list(e))
+        return value
+    
+    def save(self , **kwargs):
+        """
+        Hash and update the password in database.
+        """
+        user = self.context['request'].user
+        user.set_password(self.validated_data['new_password'])
+        user.save()
+        return user
+    
+            
+        
+        
+        
+    
