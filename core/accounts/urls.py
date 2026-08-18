@@ -15,7 +15,7 @@ router.register(r'register' , RegisterationViewset , basename='user-register')
 
 urlpatterns = [
     path('' , include(router.urls)),
-    path('login/' , TokenObtainPairView.as_view() , name='custom_login'),
+    path('login/' , TokenObtainPairView.as_view() , name='custom-login'),
     path('logout/', LogoutAPIView.as_view(), name='logout'),
     path('profile/me/' , ProfileAPIView.as_view() , name = 'user-profile-me'),
     path('token/refresh/' , TokenRefreshView.as_view() , name='token_refresh'),
