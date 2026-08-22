@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Post,Category
+from .models import Post,Category,Tag
 
 User = get_user_model()
 
@@ -22,6 +22,16 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = ['id' , 'name']
         
+class TagSerializer(serializers.ModelSerializer):
+    """
+    Serializer for managing blog post tags  
+    """
+    
+    
+    class Meta:
+        model = Tag
+        fields = ['id' , 'name']  
+        
 class PostSerializer(serializers.ModelSerializer):
     """
     Main serializer for the Post model.
@@ -33,9 +43,11 @@ class PostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields =[
-            'id' , 'title' , 'content' , 'author' , 'image',
-            'category' , 'publish' , 'created_date' , 'updated_date',
+            'id' ,'title','slug' , 'content' , 'author' , 'image',
+            'category' ,'tags', 'is_published' , 'created_date' , 'updated_date',
             'published_date' 
         ]
-        read_only_fields = ['created_date' , 'updated_date' , 'published_date']    
+        read_only_fields = ['slug','created_date' , 'updated_date' , 'published_date']      
+        
+  
         
