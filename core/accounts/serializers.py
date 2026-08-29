@@ -122,14 +122,7 @@ class ChangePasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError(list(e))
         return value
     
-    def save(self , **kwargs):
-        """
-        Hash and update the password in database.
-        """
-        user = self.context['request'].user
-        user.set_password(self.validated_data['new_password'])
-        user.save()
-        return user
+
     
             
         

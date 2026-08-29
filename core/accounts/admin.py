@@ -3,9 +3,7 @@ from django.contrib.auth.admin import UserAdmin
 from .forms import CustomUserCreationForm,CustomUserChangeForm  
 from .models import User , Profile
    
-"""
-This is a class to define admin panel for user model
-"""
+
 
 class ProfileInline(admin.StackedInline):
     """
@@ -18,9 +16,7 @@ class ProfileInline(admin.StackedInline):
     
 
 class CustomUserAdmin(UserAdmin):
-    """
-    This defines the customization of User Admin Panel
-    """
+   
     
     add_form = CustomUserCreationForm
     form = CustomUserChangeForm
