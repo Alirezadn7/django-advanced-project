@@ -3,6 +3,7 @@ from django.db import transaction
 
 User = get_user_model()
 
+# Ensures database operations succeed or rollback together as a single atomic unit
 @transaction.atomic
 def update_account(* , user ,  password=None) -> User:
     

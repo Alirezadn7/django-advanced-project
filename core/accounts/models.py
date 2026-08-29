@@ -9,10 +9,7 @@ from .managers import CustomUserManager
 
 
 class User(AbstractBaseUser , PermissionsMixin):
-    """
-    This is a class to define User model for authentication
-    """
-    
+   
     email = models.EmailField(_("email address") , unique=True)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
@@ -31,9 +28,6 @@ class User(AbstractBaseUser , PermissionsMixin):
         return self.email
 
 class Profile(models.Model):
-    """
-    this is a class to define Profile model
-    """
     
     user = models.OneToOneField(User , on_delete=models.CASCADE)
     first_name = models.CharField(max_length=255 ,  blank=True , default="")
@@ -44,6 +38,7 @@ class Profile(models.Model):
     def __str__(self):
         return self.user.email
     
+# Automatically trigger profile creation whenever a User instance is saved    
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
    

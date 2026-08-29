@@ -3,12 +3,9 @@ from django.utils.text import slugify
 from django.conf import settings
 import uuid
 
-# Create your models here.
 
 class Post(models.Model):
-    """
-    This is a class to define Post model for blog app 
-    """
+   
     
     slug = models.SlugField(max_length=256 , unique=True ,null=True, blank=True , allow_unicode=True)
     
@@ -26,6 +23,7 @@ class Post(models.Model):
     
     def save(self , *args , **kwargs ):
         if not self.slug:
+            # Generate a 4-character random suffix to prevent collisions
             unique_id = str(uuid.uuid4())[:4]
             self.slug = f"{slugify(self.title , allow_unicode=True)}-{unique_id}"
             
@@ -36,9 +34,7 @@ class Post(models.Model):
     
     
 class Category(models.Model):
-    """
-    This is a class to define Category model for blog app
-    """
+   
     
     name = models.CharField(max_length=256 , unique=True)
     slug = models.SlugField(max_length=256 , unique=True , null=True , blank=True , allow_unicode=True)
@@ -53,9 +49,7 @@ class Category(models.Model):
         return self.name
     
 class Tag(models.Model):
-    """
-    This is a class to define Tag model for blog app
-    """
+   
     
     name = models.CharField(max_length=256 , unique=True)
     slug = models.SlugField(max_length=256 , unique=True , null=True , blank=True , allow_unicode=True)

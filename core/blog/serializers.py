@@ -5,27 +5,20 @@ from .models import Post,Category,Tag
 User = get_user_model()
 
 class AuthorSerializer(serializers.ModelSerializer):
-    """
-    Helper serializer to represent nested author details in blog post API responses
-    """
     
     class Meta:
         model = User
         fields = ['id' , 'email']
         
 class CategorySerializer(serializers.ModelSerializer):
-    """
-    Serializer for managing blog post categories
-    """
+   
     
     class Meta:
         model = Category
         fields = ['id' , 'name' , 'slug']
         
 class TagSerializer(serializers.ModelSerializer):
-    """
-    Serializer for managing blog post tags  
-    """
+   
     
     
     class Meta:
@@ -34,8 +27,9 @@ class TagSerializer(serializers.ModelSerializer):
         
 class PostSerializer(serializers.ModelSerializer):
     """
-    Main serializer for the Post model.
-    Handles data serialization , validation , and nested author representaion.
+    Main serializer for reading, creating, and updating blog Post entities.
+
+    Serializes relational categories/tags and nests read-only author metadata.
     """
     
     author = AuthorSerializer(read_only = True)   
@@ -47,6 +41,7 @@ class PostSerializer(serializers.ModelSerializer):
             'category' ,'tags', 'is_published' , 'created_date' , 'updated_date',
             'published_date' 
         ]
+        # Prevent manual client overrides for auto-generated and timestamp fields
         read_only_fields = ['slug','created_date' , 'updated_date' , 'published_date']      
         
   

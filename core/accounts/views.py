@@ -6,18 +6,14 @@ from .serializers import ProfileSerializers , UserRegisterSerializer , CustomTok
 from rest_framework_simplejwt.views import TokenObtainPairView 
 from .services.accounts import update_account
 
-# Create your views here.
+
 class RegisterationViewset(mixins.CreateModelMixin , viewsets.GenericViewSet):
-    """
-    Handles user registration.
-    """
+    
     serializer_class = UserRegisterSerializer
     permission_classes = [permissions.AllowAny] # Anyone can register
     
 class ProfileAPIView(generics.RetrieveUpdateAPIView):
-    """
-    Handles retrieving and updating the authenticated user's profile
-    """  
+     
     queryset = Profile.objects.all() 
     serializer_class = ProfileSerializers
     permission_classes = [permissions.IsAuthenticated]
@@ -27,15 +23,11 @@ class ProfileAPIView(generics.RetrieveUpdateAPIView):
         return self.request.user.profile
     
 class TokenObtainPairView(TokenObtainPairView):
-    """
-    Custom JWT authentication view.
-    """
+    
     serializer_class = CustomTokenObtainPairSerializer
     
 class LogoutAPIView(generics.GenericAPIView):
-    """
-    Handles user logout by blacklisting the refresh token
-    """
+    
     serializer_class = LogoutSerializer
     permission_classes = [permissions.IsAuthenticated]
     
@@ -50,10 +42,7 @@ class LogoutAPIView(generics.GenericAPIView):
         )
 
 class ChangePasswordAPIView(APIView):
-    """
-    An endpoint for changing password for logged-in users.
-    Requires IsAuthenticated permission
-    """
+    
     permission_classes = [permissions.IsAuthenticated]
     
     def post(self , request ,*args , **kwargs):

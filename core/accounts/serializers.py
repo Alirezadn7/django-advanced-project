@@ -9,10 +9,7 @@ User = get_user_model()
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
-    """
-    This is a class to serilize my user model
-    """
-    
+   
     password = serializers.CharField(
         write_only = True , 
         style = {'input_type' : 'password'}
@@ -41,10 +38,6 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         return user
     
 class ProfileSerializers(serializers.ModelSerializer):
-    """
-    This is a class to serilize my profile model
-    """
-    
     
     email = serializers.EmailField(source='user.email' , read_only = True)
     
@@ -54,8 +47,8 @@ class ProfileSerializers(serializers.ModelSerializer):
         
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """
-    Custom serializer for JWT token generation.
-    Extends token payload to safely include user identity and profile metadata.
+    Custom serializer that appends user identifiers and basic profile
+    metadata to the returned JWT response on successful login.
     """
     
     def validate(self, attrs):
@@ -68,11 +61,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         except (AttributeError):    
             data['first_name'] = ""
         
-        return data     
+        return data  
+       
 class LogoutSerializer(serializers.Serializer):
-    """
-    Serializer for blacklisting the provided refresh token on user logout
-    """
+    
     refresh = serializers.CharField()
     
     def validate(self , attrs):
@@ -81,41 +73,33 @@ class LogoutSerializer(serializers.Serializer):
     
     def save(self , **kwargs):
         try :
+            # Instantiate and push token into the token blacklist table
             token = RefreshToken(self.token)
             token.blacklist()
         except TokenError:
             raise serializers.ValidationError({"refresh" : "Invalid or expired refresh token."})                
 
 class ChangePasswordSerializer(serializers.Serializer):
-    """
-    Serializer for password change endpoint (for authenticated users)
-    """
+  
+   # Common configuration for password input fields
+    password_kwargs = {
+        "required": True,
+        "write_only": True,
+        "style": {"input_type": "password"},
+    }
     
-    old_password = serializers.CharField(
-        required = True,
-        write_only = True,
-        style={'input_type': 'password'}
-    )
-    
-    new_password = serializers.CharField(
-        required = True,
-        write_only = True,
-        style={'input_type': 'password'}
-    )
+    old_password = serializers.CharField(**password_kwargs)
+    new_password = serializers.CharField(**password_kwargs)
     
     def validate_old_password(self , value):
-        """
-        check if the old password is correct.
-        """
+       
         user = self.context['request'].user
         if not user.check_password(value):
             raise serializers.ValidationError("Old password is not correct.")
         return value
     
     def validate_new_password(self , value):
-        """
-        Validate new password with Django validators.
-        """
+       
         try:
             validate_password(value)
         except DjangoValidationError as e:

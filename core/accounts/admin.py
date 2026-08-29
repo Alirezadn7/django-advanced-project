@@ -7,7 +7,10 @@ from .models import User , Profile
 
 class ProfileInline(admin.StackedInline):
     """
-    Lets you view/edit Profile fields directly on the User admin page.
+    Inline admin descriptor for the Profile model.
+
+    Allows managing user profile information directly within the
+    built-in Django User change page while preventing accidental profile deletion.
     """
     model = Profile
     can_delete = False
