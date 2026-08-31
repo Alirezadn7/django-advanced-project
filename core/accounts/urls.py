@@ -1,13 +1,14 @@
-from django.urls import path,include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from .views import ( 
-    RegisterationViewset ,
-    ProfileAPIView ,
-    TokenObtainPairView ,
-    LogoutAPIView,
-    ChangePasswordAPIView
-    )
 from rest_framework_simplejwt.views import TokenRefreshView
+
+from .views import (
+    ChangePasswordAPIView,
+    LogoutAPIView,
+    ProfileAPIView,
+    RegisterationViewset,
+    TokenObtainPairView,
+)
 
 router = DefaultRouter()
 router.register(r'register' , RegisterationViewset , basename='user-register')

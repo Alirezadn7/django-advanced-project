@@ -1,7 +1,9 @@
-from rest_framework import viewsets, permissions
 from django.utils import timezone
+from rest_framework import permissions, viewsets
+
 from .models import Post
 from .serializers import PostSerializer
+
 
 class PostViewSet(viewsets.ModelViewSet):
     """

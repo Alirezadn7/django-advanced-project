@@ -1,10 +1,12 @@
-from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
-from .models import Profile
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework_simplejwt.tokens import RefreshToken , TokenError
 from django.core.exceptions import ValidationError as DjangoValidationError
+from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError
+
+from .models import Profile
+
 User = get_user_model()
 
 
@@ -82,7 +84,7 @@ class LogoutSerializer(serializers.Serializer):
 class ChangePasswordSerializer(serializers.Serializer):
   
    # Common configuration for password input fields
-    password_kwargs = {
+    password_kwargs = {  
         "required": True,
         "write_only": True,
         "style": {"input_type": "password"},

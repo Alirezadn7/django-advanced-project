@@ -1,8 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .forms import CustomUserCreationForm,CustomUserChangeForm  
-from .models import User , Profile
-   
+
+from .forms import CustomUserChangeForm, CustomUserCreationForm
+from .models import Profile, User
 
 
 class ProfileInline(admin.StackedInline):
