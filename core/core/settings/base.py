@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     # 3rd party
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
-    "django_filetrs",
+    "django_filters",
     
     # Local
     "accounts",
