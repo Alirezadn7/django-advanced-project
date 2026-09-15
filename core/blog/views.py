@@ -37,6 +37,17 @@ class PostViewSet(viewsets.ModelViewSet):
             serializer.save(author=self.request.user , published_date = timezone.now())
         else:
             serializer.save(author=self.request.user)
+
+    # Stamp publish date if a draft is published via update (PUT/PATCH)
+    def perform_update(self, serializer):
+        instance = serializer.instance
+        is_published = serializer.validated_data.get(
+            'is_published', instance.is_published
+        )
+        if is_published and not instance.published_date:
+            serializer.save(published_date=timezone.now())
+        else:
+            serializer.save()
             
 class CategoryReadOnlyViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()

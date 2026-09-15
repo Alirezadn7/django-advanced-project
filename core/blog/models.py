@@ -35,10 +35,14 @@ class Post(models.Model):
     
     
 class Category(models.Model):
-   
-    
+
+
     name = models.CharField(max_length=256 , unique=True)
     slug = models.SlugField(max_length=256 , unique=True , null=True , blank=True , allow_unicode=True)
+
+    class Meta:
+        # Deterministic ordering avoids UnorderedObjectListWarning under pagination
+        ordering = ["name"]
     
     def save(self , *args , **kwargs):
         if not self.slug:
@@ -50,10 +54,14 @@ class Category(models.Model):
         return self.name
     
 class Tag(models.Model):
-   
-    
+
+
     name = models.CharField(max_length=256 , unique=True)
     slug = models.SlugField(max_length=256 , unique=True , null=True , blank=True , allow_unicode=True)
+
+    class Meta:
+        # Deterministic ordering avoids UnorderedObjectListWarning under pagination
+        ordering = ["name"]
     
     def save(self , *args , **kwargs):
         if not self.slug:
