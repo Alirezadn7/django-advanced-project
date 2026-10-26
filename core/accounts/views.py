@@ -7,11 +7,13 @@ from .models import Profile
 from .serializers import (
     ChangePasswordSerializer,
     CustomTokenObtainPairSerializer,
+    GoogleLoginSerializer,
     LogoutSerializer,
     ProfileSerializers,
     UserRegisterSerializer,
 )
 from .services.accounts import update_account
+from .services.tokens import build_auth_payload
 
 
 class RegisterationViewset(mixins.CreateModelMixin , viewsets.GenericViewSet):
@@ -32,6 +34,20 @@ class ProfileAPIView(generics.RetrieveUpdateAPIView):
 class TokenObtainPairView(TokenObtainPairView):
     
     serializer_class = CustomTokenObtainPairSerializer
+
+class GoogleLoginAPIView(APIView):
+    """Authenticate with a Google ID token and return SimpleJWT tokens."""
+    
+    permission_classes = [permissions.AllowAny]
+    
+    def post(self, request, *args, **kwargs):
+        serializer = GoogleLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        return Response(
+            build_auth_payload(serializer.user),
+            status=status.HTTP_200_OK,
+        )
     
 class LogoutAPIView(generics.GenericAPIView):
     

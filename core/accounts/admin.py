@@ -33,10 +33,11 @@ class CustomUserAdmin(UserAdmin):
     
     fieldsets = (
         (None, {"fields": ("email", "password")}),
+        ("Google", {"fields": ("google_id",)}),
         ("Permissions", {"fields": ("is_staff", "is_active","is_superuser", "groups", "user_permissions")}),
         ("Important dates" , {"fields": ("last_login" , "created_date" , "updated_date")}),
     )
-    readonly_fields = ("created_date" , "updated_date" , "last_login")
+    readonly_fields = ("created_date" , "updated_date" , "last_login", "google_id")
     
     add_fieldsets = (
         (None, {

@@ -11,6 +11,13 @@ from .managers import CustomUserManager
 class User(AbstractBaseUser , PermissionsMixin):
    
     email = models.EmailField(_("email address") , unique=True)
+    google_id = models.CharField(
+        _("google account id"),
+        max_length=255,
+        unique=True,
+        null=True,
+        blank=True,
+    )
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     
@@ -33,6 +40,7 @@ class Profile(models.Model):
     first_name = models.CharField(max_length=255 ,  blank=True , default="")
     last_name = models.CharField(max_length=255 , blank=True , default="")
     image = models.ImageField(blank=True , null=True)
+    avatar_url = models.URLField(blank=True , default="")
     bio = models.TextField(blank=True , default="")
     
     def __str__(self):

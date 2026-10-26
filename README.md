@@ -18,6 +18,7 @@ This project includes backend development only and does not contain a frontend.
 | Django 4.2 | Web framework |
 | Django REST Framework 3.17 | API toolkit |
 | SimpleJWT 5.5 | JWT authentication (rotation + blacklist) |
+| google-auth 2.62 | Google Sign-In ID token verification |
 | django-filter 24.3 | API filtering |
 | Pillow 12.2 | Image upload support |
 | python-decouple 3.8 | Environment configuration |
@@ -30,8 +31,9 @@ This project includes backend development only and does not contain a frontend.
 - Custom email-based user model (`AbstractBaseUser`)
 - Automatic profile creation via signal
 - JWT login, refresh, and logout (token blacklisting)
+- Google Sign-In (Gmail) — verifies Google ID tokens and returns the same JWT pair
 - Profile retrieval/update and password change endpoints
-- Fully tested (`accounts/tests.py`)
+- Fully tested (`core/tests/`)
 
 ### Blog
 - `Post`, `Category`, and `Tag` models
@@ -49,6 +51,7 @@ This project includes backend development only and does not contain a frontend.
 |--------|----------|--------|
 | POST | `register/` | Public |
 | POST | `login/` | Public |
+| POST | `auth/google/` | Public |
 | POST | `token/refresh/` | Public |
 | POST | `logout/` | Authenticated |
 | GET / PATCH | `profile/me/` | Authenticated |
@@ -70,6 +73,113 @@ This project includes backend development only and does not contain a frontend.
 - Search: `?search=`
 - Order: `?ordering=`
 - Pagination: `?page=`
+
+## Google Sign-In
+
+The API uses the **ID token flow**: the client signs in with Google, sends the
+returned `id_token` to Django, and Django responds with the project's regular
+access/refresh JWT pair. No client secret or redirect URL is involved.
+
+### 1. Create a Google OAuth client
+
+1. Open the [Google Cloud Console](https://console.cloud.google.com/) and create (or select) a project.
+2. Configure **APIs & Services → OAuth consent screen** (External). While the app is in
+   testing, add your Google account under **Test users**.
+3. Go to **Credentials → Create credentials → OAuth client ID → Web application**
+   (use **Android** / **iOS** instead for a native app).
+4. Add your frontend origins to **Authorized JavaScript origins**, e.g.
+   `http://localhost:3000` and `http://127.0.0.1:8000`.
+5. Copy the **Client ID** (not the secret) into `.env`:
+
+```env
+GOOGLE_OAUTH_CLIENT_ID=1234567890-abc.apps.googleusercontent.com
+```
+
+### 2. Exchange the Google token for JWTs
+
+```http
+POST /api/accounts/auth/google/
+Content-Type: application/json
+
+{ "id_token": "<credential returned by Google Identity Services>" }
+```
+
+Successful response (same shape as `login/`):
+
+```json
+{
+  "refresh": "...",
+  "access": "...",
+  "id": 1,
+  "email": "user@gmail.com",
+  "first_name": "Ali"
+}
+```
+
+Invalid, expired, or unverified Google tokens return `400` with an
+`id_token` error. The access token is used exactly like a password-login
+access token: `Authorization: Bearer <access>`.
+
+### 3. Frontend example
+
+```html
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<div id="gsi-button"></div>
+<script>
+  google.accounts.id.initialize({
+    client_id: "YOUR_GOOGLE_CLIENT_ID",
+    callback: async ({ credential }) => {
+      const response = await fetch("/api/accounts/auth/google/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_token: credential }),
+      });
+      const data = await response.json(); // { access, refresh, ... }
+      localStorage.setItem("access", data.access);
+    },
+  });
+
+  google.accounts.id.renderButton(document.getElementById("gsi-button"), {
+    theme: "outline",
+    size: "large",
+  });
+</script>
+```
+
+If the frontend is served from a different origin than the API, install and
+configure `django-cors-headers` and add that origin to `CORS_ALLOWED_ORIGINS`.
+
+### Testing with Docker
+
+The compose setup publishes the API on **port 9000**. Register
+`http://localhost:9000` (and `http://127.0.0.1:9000` if you use that host) as an
+authorized JavaScript origin in Google Cloud Console.
+
+Rebuild once so the container installs `google-auth`, then start it:
+
+```bash
+docker compose up --build
+```
+
+The container applies migrations automatically on startup. Open the dev-only
+test page:
+
+```text
+http://localhost:9000/static/google-test.html
+```
+
+The page signs in with Google, prints the decoded ID token claims, and lets you
+exercise `auth/google/`, `profile/me/`, `token/refresh/`, `logout/`, and an
+invalid token. Its source is `core/core/staticfiles/google-test.html`.
+
+### Account linking
+
+- A verified Google email is automatically linked to an existing password
+  account with the same address.
+- If the email is already linked to a different Google account (`sub`),
+  the request is rejected.
+- Google-only users get an unusable password; they can still use every
+  authenticated endpoint with their JWTs.
 
 ## Installation
 

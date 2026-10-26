@@ -1,10 +1,12 @@
 services:
   backend:
     build: .
-    command: python core/manage.py runserver 0.0.0.0:8000
+    command: sh -c "python core/manage.py migrate --noinput && python core/manage.py runserver 0.0.0.0:8000"
     ports:
       - "9000:8000"
     volumes:
       - .:/app
+    env_file:
+      - .env
     environment:
       - PYTHONPATH=/app

@@ -8,3 +8,4 @@ djangorestframework-simplejwt~=5.5.0
 django-filter~=24.3
 pytest~=8.3
 pytest-django~=4.9
+google-auth[requests]~=2.35

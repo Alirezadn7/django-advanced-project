@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+venv/
+.venv/
+env/
+ENV/
+
+# Django
+db.sqlite3
+db.sqlite3-journal
+media/
+core/core/static/
+
+# Git, editors, CI
+.git/
+.github/
+.vscode/
+.idea/
+
+# Local secrets and docs
+.env
+.env.*
+LICENSE
+README.md

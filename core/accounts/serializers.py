@@ -6,6 +6,12 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 
 from .models import Profile
+from .services.google import (
+    GoogleTokenError,
+    get_or_create_google_user,
+    verify_google_id_token,
+)
+from .services.tokens import build_auth_payload
 
 User = get_user_model()
 
@@ -45,7 +51,7 @@ class ProfileSerializers(serializers.ModelSerializer):
     
     class Meta:
         model = Profile
-        fields = ['id' , 'email' , 'first_name' , 'last_name' , 'image' , 'bio']
+        fields = ['id' , 'email' , 'first_name' , 'last_name' , 'image' , 'avatar_url' , 'bio']
         
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """
@@ -54,16 +60,25 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """
     
     def validate(self, attrs):
-        data = super().validate(attrs)
+        # Authenticate credentials first; this sets ``self.user``.
+        super().validate(attrs)
         
-        data['id'] = self.user.id
-        data['email'] = self.user.email
+        return build_auth_payload(self.user)
+
+
+class GoogleLoginSerializer(serializers.Serializer):
+    """Exchange a Google ID token for local SimpleJWT tokens."""
+    
+    id_token = serializers.CharField(write_only=True)
+    
+    def validate_id_token(self, value):
         try:
-            data['first_name'] = self.user.profile.first_name
-        except (AttributeError):    
-            data['first_name'] = ""
+            payload = verify_google_id_token(value)
+            self.user = get_or_create_google_user(payload)
+        except GoogleTokenError as exc:
+            raise serializers.ValidationError(str(exc)) from exc
         
-        return data  
+        return value
        
 class LogoutSerializer(serializers.Serializer):
     

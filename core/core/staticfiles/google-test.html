@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Google Sign-In test</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      max-width: 860px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      font: 15px/1.5 system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    h1 { font-size: 1.4rem; margin-bottom: .25rem; }
+    .note { opacity: .75; margin-top: 0; }
+    .origin { font-family: ui-monospace, monospace; }
+    .actions { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1.25rem 0; }
+    button { padding: .45rem .8rem; cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .5; }
+    pre {
+      background: #111827;
+      color: #e5e7eb;
+      padding: 1rem;
+      border-radius: 8px;
+      overflow: auto;
+      min-height: 8rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    code { font-size: .9em; }
+  </style>
+</head>
+<body>
+  <h1>Google Sign-In → JWT test</h1>
+  <p class="note">
+    Dev-only page. Open it through the running app so API calls stay same-origin.
+    Register <span class="origin" id="origin"></span> as an authorized
+    JavaScript origin in Google Cloud Console.
+  </p>
+
+  <div id="gsi"></div>
+
+  <div class="actions">
+    <button id="btn-profile" disabled>GET /profile/me/</button>
+    <button id="btn-refresh" disabled>POST /token/refresh/</button>
+    <button id="btn-logout" disabled>POST /logout/</button>
+    <button id="btn-bad">POST invalid id_token</button>
+    <button id="btn-clear">Clear log</button>
+  </div>
+
+  <pre id="log">Waiting for sign-in...</pre>
+
+  <script src="https://accounts.google.com/gsi/client"></script>
+  <script>
+    const CLIENT_ID = "264548137720-os5n8u9nf1tigbv0ptncs9l4dc7avnja.apps.googleusercontent.com";
+
+    const logEl = document.getElementById("log");
+    const buttons = {
+      profile: document.getElementById("btn-profile"),
+      refresh: document.getElementById("btn-refresh"),
+      logout: document.getElementById("btn-logout"),
+      bad: document.getElementById("btn-bad"),
+      clear: document.getElementById("btn-clear"),
+    };
+
+    let access = null;
+    let refresh = null;
+
+    document.getElementById("origin").textContent = window.location.origin;
+
+    function log(label, status, data) {
+      const entry = [
+        `[${new Date().toLocaleTimeString()}] ${label} -> ${status}`,
+        JSON.stringify(data, null, 2),
+      ].join("\n");
+      logEl.textContent = logEl.textContent === "Waiting for sign-in..."
+        ? entry
+        : `${logEl.textContent}\n\n${entry}`;
+    }
+
+    function syncButtons() {
+      buttons.profile.disabled = !access;
+      buttons.refresh.disabled = !refresh;
+      buttons.logout.disabled = !(access && refresh);
+    }
+
+    function authHeaders() {
+      return access ? { Authorization: `Bearer ${access}` } : {};
+    }
+
+    function decodeJwtPayload(token) {
+      const part = token.split(".")[1];
+      if (!part) throw new Error("Not a JWT");
+
+      const base64 = part.replace(/-/g, "+").replace(/_/g, "/");
+      const padded = base64.padEnd(
+        base64.length + ((4 - (base64.length % 4)) % 4),
+        "="
+      );
+      const bytes = Uint8Array.from(atob(padded), (char) => char.charCodeAt(0));
+
+      return JSON.parse(new TextDecoder().decode(bytes));
+    }
+
+    async function readJson(response) {
+      const text = await response.text();
+      if (!text) return null;
+      try {
+        return JSON.parse(text);
+      } catch {
+        return text;
+      }
+    }
+
+    async function handleCredential({ credential }) {
+      try {
+        log("Google ID token claims", "decoded", decodeJwtPayload(credential));
+      } catch (error) {
+        log("Google ID token claims", "error", String(error));
+      }
+
+      const response = await fetch("/api/accounts/auth/google/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_token: credential }),
+      });
+      const data = await readJson(response);
+      log("POST /api/accounts/auth/google/", response.status, data);
+
+      if (response.ok) {
+        access = data.access;
+        refresh = data.refresh;
+        syncButtons();
+      }
+    }
+
+    buttons.profile.addEventListener("click", async () => {
+      const response = await fetch("/api/accounts/profile/me/", {
+        headers: authHeaders(),
+      });
+      log("GET /api/accounts/profile/me/", response.status, await readJson(response));
+    });
+
+    buttons.refresh.addEventListener("click", async () => {
+      const response = await fetch("/api/accounts/token/refresh/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh }),
+      });
+      const data = await readJson(response);
+      log("POST /api/accounts/token/refresh/", response.status, data);
+
+      if (response.ok) {
+        access = data.access;
+        if (data.refresh) refresh = data.refresh;
+        syncButtons();
+      }
+    });
+
+    buttons.logout.addEventListener("click", async () => {
+      const response = await fetch("/api/accounts/logout/", {
+        method: "POST",
+        headers: {
+          ...authHeaders(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ refresh }),
+      });
+      const data = await readJson(response);
+      log("POST /api/accounts/logout/", response.status, data);
+
+      if (response.ok) {
+        access = null;
+        refresh = null;
+        syncButtons();
+      }
+    });
+
+    buttons.bad.addEventListener("click", async () => {
+      const response = await fetch("/api/accounts/auth/google/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_token: "definitely-not-a-google-token" }),
+      });
+      log("POST invalid id_token", response.status, await readJson(response));
+    });
+
+    buttons.clear.addEventListener("click", () => {
+      logEl.textContent = "";
+    });
+
+    google.accounts.id.initialize({
+      client_id: CLIENT_ID,
+      callback: handleCredential,
+    });
+
+    google.accounts.id.renderButton(document.getElementById("gsi"), {
+      theme: "outline",
+      size: "large",
+      text: "signin_with",
+      shape: "rectangular",
+    });
+  </script>
+</body>
+</html>

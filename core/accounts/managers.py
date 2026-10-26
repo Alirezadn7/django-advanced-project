@@ -23,6 +23,20 @@ class CustomUserManager(BaseUserManager):
         user.save()
         return user
     
+    def create_google_user(self, email, google_id, **extra_fields):
+        """Create a user authenticated through Google (no usable password)."""
+        
+        if not email:
+            raise ValueError(_('The Email field must be set'))
+        if not google_id:
+            raise ValueError(_('The Google account ID must be set'))
+        
+        email = self.normalize_email(email).lower()
+        user = self.model(email=email, google_id=google_id, **extra_fields)
+        user.set_unusable_password()
+        user.save(using=self._db)
+        return user
+    
     def create_superuser(self , email , password , **extra_fields):
         
         extra_fields.setdefault("is_staff" , True)
