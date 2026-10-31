@@ -1,0 +1,210 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تست ورود با OTP بله</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      color: #e2e8f0;
+    }
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 28px;
+      width: 100%;
+      max-width: 460px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.45);
+    }
+    h1 { font-size: 1.15rem; margin-bottom: 4px; color: #38bdf8; }
+    .subtitle { font-size: .82rem; color: #94a3b8; margin-bottom: 22px; }
+    label { display: block; font-size: .8rem; color: #cbd5e1; margin: 14px 0 6px; }
+    input {
+      width: 100%; padding: 11px 12px; border-radius: 10px;
+      border: 1px solid #475569; background: #0f172a; color: #e2e8f0;
+      font-size: 1rem; direction: ltr; text-align: left;
+    }
+    input:focus { outline: none; border-color: #38bdf8; }
+    button {
+      width: 100%; margin-top: 14px; padding: 11px; border: none;
+      border-radius: 10px; font-size: .95rem; font-weight: 600; cursor: pointer;
+      background: #0ea5e9; color: #fff; transition: opacity .2s;
+    }
+    button:hover:not(:disabled) { background: #0284c7; }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    button.secondary { background: #22c55e; }
+    button.secondary:hover:not(:disabled) { background: #16a34a; }
+    .status {
+      margin-top: 16px; padding: 10px 12px; border-radius: 10px;
+      font-size: .82rem; display: none;
+    }
+    .status.ok { display: block; background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.4); color: #86efac; }
+    .status.err { display: block; background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.4); color: #fca5a5; }
+    .result {
+      margin-top: 14px; padding: 12px; border-radius: 10px;
+      background: #0f172a; border: 1px solid #334155;
+      font-size: .75rem; direction: ltr; text-align: left;
+      max-height: 220px; overflow: auto; white-space: pre-wrap;
+      word-break: break-all; display: none; font-family: monospace;
+    }
+    .token-box { margin-top: 10px; }
+    .token-box textarea {
+      width: 100%; height: 70px; background: #0f172a; color: #86efac;
+      border: 1px solid #475569; border-radius: 8px; padding: 8px;
+      font-family: monospace; font-size: .7rem; direction: ltr;
+      resize: none;
+    }
+    .divider { margin: 22px 0; border-top: 1px solid #334155; }
+    .hint { font-size: .72rem; color: #64748b; margin-top: 8px; line-height: 1.7; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🔓 ورود با شماره موبایل (Gateway بله)</h1>
+    <p class="subtitle">ارسال کد یکبارمصرف از طریق Gateway بله و دریافت توکن JWT</p>
+
+    <label for="phone">شماره موبایل</label>
+    <input id="phone" placeholder="09123456789" autocomplete="tel" inputmode="numeric">
+
+    <button id="sendBtn" onclick="sendOtp()">ارسال کد</button>
+
+    <label for="code">کد تأیید</label>
+    <input id="code" placeholder="------" autocomplete="one-time-code" inputmode="numeric" maxlength="8">
+
+    <button id="verifyBtn" class="secondary" onclick="verifyOtp()" disabled>تأیید و ورود</button>
+
+    <div id="status" class="status"></div>
+    <div id="result" class="result"></div>
+
+    <div id="tokenBox" class="token-box" style="display:none">
+      <label>Refresh Token</label>
+      <textarea id="refreshToken" readonly></textarea>
+      <label>Access Token (برای اتصال به Profile API و ...)</label>
+      <textarea id="accessToken" readonly></textarea>
+    </div>
+
+    <div class="divider"></div>
+    <p class="hint">
+      نکته‌ها: شماره با فرمت ۰۹xxxxxxxxx وارد شود (سرویس به 98xxxxxxxxx تبدیل می‌کند) ·
+      حداکثر ۳۰ ارسال در ساعت برای هر شماره · Throttle محلی: ۱ درخواست در دقیقه ·
+      کد بعد از ۵ تلاش نادرست قفل می‌شود.
+    </p>
+  </div>
+
+  <script>
+    const API_ROOT = "{% url 'otp-request' %}".replace(/otp\/request\/$/, "");
+
+    const phoneInput = document.getElementById("phone");
+    const codeInput = document.getElementById("code");
+    const sendBtn = document.getElementById("sendBtn");
+    const verifyBtn = document.getElementById("verifyBtn");
+    const statusEl = document.getElementById("status");
+    const resultEl = document.getElementById("result");
+    const tokenBox = document.getElementById("tokenBox");
+
+    function setStatus(message, ok) {
+      statusEl.className = "status " + (ok ? "ok" : "err");
+      statusEl.textContent = message;
+    }
+
+    function showResult(data) {
+      resultEl.style.display = "block";
+      resultEl.textContent = JSON.stringify(data, null, 2);
+    }
+
+    function showTokens(data) {
+      if (!data.access) return;
+      document.getElementById("accessToken").value = data.access;
+      document.getElementById("refreshToken").value = data.refresh || "";
+      tokenBox.style.display = "block";
+      verifyBtn.disabled = true;
+    }
+
+    async function sendOtp() {
+      const phone = phoneInput.value.trim();
+
+      setStatus("در حال ارسال کد ...", true);
+      showResult({});
+
+      try {
+        const res = await fetch(API_ROOT + "otp/request/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone }),
+        });
+        const data = await res.json();
+
+        showResult(data);
+
+        if (res.ok) {
+          setStatus(
+            "کد ارسال شد ✔" +
+            (data.message_id ? " · message_id: " + data.message_id : "") +
+            " · انقضای کد: " + data.expires_in + " ثانیه", true
+          );
+          verifyBtn.disabled = false;
+          codeInput.focus();
+
+          // Local throttle is 1 request/minute -> disable the button a bit.
+          let left = 60;
+          sendBtn.disabled = true;
+          const original = sendBtn.textContent;
+          const timer = setInterval(() => {
+            sendBtn.textContent = "ارسال مجدد تا " + left + " ثانیه";
+            left -= 1;
+            if (left <= 0) {
+              clearInterval(timer);
+              sendBtn.textContent = original;
+              sendBtn.disabled = false;
+            }
+          }, 1000);
+        } else {
+          const msg = data.detail || data.phone || data.non_field_errors || "ارسال کد ناموفق بود";
+          setStatus(String(msg), false);
+        }
+      } catch (e) {
+        setStatus("خطای ارتباط با سرور: " + e.message, false);
+      }
+    }
+
+    async function verifyOtp() {
+      const phone = phoneInput.value.trim();
+      const code = codeInput.value.trim();
+
+      setStatus("در حال بررسی کد ...", true);
+      showResult({});
+
+      try {
+        const res = await fetch(API_ROOT + "otp/verify/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone, code }),
+        });
+        const data = await res.json();
+
+        showResult(data);
+
+        if (res.ok) {
+          setStatus("ورود موفق ✔ توکن‌ها دریافت شدند", true);
+          showTokens(data);
+        } else {
+          const msg = data.detail || data.code || data.phone || data.non_field_errors || "کد تأیید نشد";
+          setStatus(String(msg), false);
+        }
+      } catch (e) {
+        setStatus("خطای ارتباط با سرور: " + e.message, false);
+      }
+    }
+  </script>
+</body>
+</html>

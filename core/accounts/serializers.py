@@ -11,6 +11,12 @@ from .services.google import (
     get_or_create_google_user,
     verify_google_id_token,
 )
+from .services.otp import (
+    OtpError,
+    normalize_local_phone,
+    request_otp,
+    verify_otp,
+)
 from .services.tokens import build_auth_payload
 
 User = get_user_model()
@@ -96,8 +102,57 @@ class LogoutSerializer(serializers.Serializer):
         except TokenError:
             raise serializers.ValidationError({"refresh" : "Invalid or expired refresh token."})                
 
+class OtpRequestSerializer(serializers.Serializer):
+    """Ask the Bale gateway to send an OTP code to a phone number."""
+
+    phone = serializers.CharField()
+
+    def validate_phone(self, value):
+        try:
+            return normalize_local_phone(value)
+        except OtpError as exc:
+            raise serializers.ValidationError(str(exc)) from exc
+
+    def save(self, **kwargs):
+        # ``request_otp`` may raise mapped gateway errors (429/404/402/...);
+        # the API view converts them into the proper HTTP status codes.
+        return request_otp(self.validated_data["phone"])
+
+
+class OtpVerifySerializer(serializers.Serializer):
+    """Check the OTP code and issue SimpleJWT tokens for the user."""
+
+    phone = serializers.CharField()
+    code = serializers.CharField()
+
+    def validate_phone(self, value):
+        try:
+            return normalize_local_phone(value)
+        except OtpError as exc:
+            raise serializers.ValidationError(str(exc)) from exc
+
+    def validate_code(self, value):
+        code = "".join(ch for ch in value if ch.isdigit())
+        if not 3 <= len(code) <= 8:
+            raise serializers.ValidationError(
+                "The verification code must be 3-8 digits."
+            )
+        return code
+
+    def save(self, **kwargs):
+        self.user = verify_otp(
+            self.validated_data["phone"],
+            self.validated_data["code"],
+            linking_user=self.context.get("request").user
+            if self.context.get("request") is not None
+            else None,
+        )
+
+        return build_auth_payload(self.user)
+
+
 class ChangePasswordSerializer(serializers.Serializer):
-  
+
    # Common configuration for password input fields
     password_kwargs = {  
         "required": True,

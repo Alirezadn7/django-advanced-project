@@ -19,6 +19,7 @@ This project includes backend development only and does not contain a frontend.
 | Django REST Framework 3.17 | API toolkit |
 | SimpleJWT 5.5 | JWT authentication (rotation + blacklist) |
 | google-auth 2.62 | Google Sign-In ID token verification |
+| requests 2.32 | Bale OTP gateway HTTP client |
 | django-filter 24.3 | API filtering |
 | Pillow 12.2 | Image upload support |
 | python-decouple 3.8 | Environment configuration |
@@ -32,6 +33,7 @@ This project includes backend development only and does not contain a frontend.
 - Automatic profile creation via signal
 - JWT login, refresh, and logout (token blacklisting)
 - Google Sign-In (Gmail) — verifies Google ID tokens and returns the same JWT pair
+- Phone OTP login via the **Bale.ai Gateway** (Safir `send_message`)
 - Profile retrieval/update and password change endpoints
 - Fully tested (`core/tests/`)
 
@@ -52,6 +54,8 @@ This project includes backend development only and does not contain a frontend.
 | POST | `register/` | Public |
 | POST | `login/` | Public |
 | POST | `auth/google/` | Public |
+| POST | `otp/request/` | Public (rate limited) |
+| POST | `otp/verify/` | Public (rate limited) |
 | POST | `token/refresh/` | Public |
 | POST | `logout/` | Authenticated |
 | GET / PATCH | `profile/me/` | Authenticated |
@@ -181,6 +185,78 @@ invalid token. Its source is `core/core/staticfiles/google-test.html`.
 - Google-only users get an unusable password; they can still use every
   authenticated endpoint with their JWTs.
 
+## Phone OTP Login (Bale.ai Gateway)
+
+Users can sign in with an Iranian mobile number (`09xxxxxxxxx`). A one-time
+code is delivered as an SMS/Bale message through the
+[Bale Gateway](https://docs.bale.ai/gateway) (Safir `send_message`, bot OTP
+message), and verification returns the project's regular access/refresh JWT
+pair.
+
+### Flow
+
+```http
+POST /api/accounts/otp/request/
+Content-Type: application/json
+
+{ "phone": "09123456789" }
+```
+
+Response: `{ "detail": "OTP code sent successfully.", "expires_in": 120, "message_id": "..." }`
+
+```http
+POST /api/accounts/otp/verify/
+Content-Type: application/json
+
+{ "phone": "09123456789", "code": "123456" }
+```
+
+Successful response — same shape as `login/` (JWT pair + user metadata).
+`09..`, `+98..` and `98..` phone spellings are interchangeable.
+
+### Gateway setup (`.env`)
+
+```env
+# Safir v3 send_message route (default): bot OTP message
+BALE_API_ACCESS_KEY=your-bale-api-access-key
+BALE_BOT_ID=123456789
+
+# Optional legacy route: OAuth client_credentials + /send_otp
+BALE_OTP_GATEWAY=v3
+BALE_OTP_CLIENT_ID=...
+BALE_OTP_CLIENT_SECRET=...
+
+# Flow tuning
+OTP_CODE_LENGTH=6          # 3-8 digits (gateway contract)
+OTP_TTL_SECONDS=120        # code lifetime
+OTP_PHONE_HOURLY_LIMIT=30  # Bale contract: max 30 sends/hour per phone
+OTP_MAX_ATTEMPTS=5         # wrong guesses before lock-out
+```
+
+### Security design
+
+- Codes are generated with a CSPRNG and **never stored in plaintext** — only a
+  salted SHA-256 hash, verified with a constant-time comparison.
+- A code is single-use (atomically claimed), expires after `OTP_TTL_SECONDS`,
+  and self-locks after `OTP_MAX_ATTEMPTS` wrong guesses (atomic attempt
+  counter, so parallel guesses cannot bypass the lock-out).
+- Local DRF throttling (`1/min` request, `5/min` verify) on top of the
+  gateway's own limits; gateway errors map to clean `400/402/404/429/502`
+  responses without leaking credentials.
+- The gateway wallet balance is never exposed in public API responses.
+- A dev-only browser test page lives at `/api/accounts/otp/test/` and is only
+  registered when `DEBUG=True`.
+
+### Account linking
+
+- Verifying an OTP for a phone number that already owns an account logs that
+  account in (its status must be active).
+- An authenticated caller whose account has **no phone yet** claims the
+  verified number and gets it linked instead of creating a duplicate account.
+- Phone-only users are created with e-mail placeholder `{phone}@otp.local`
+  and an unusable password; they can use every authenticated endpoint with
+  their JWTs.
+
 ## Installation
 
 ### Local setup
@@ -218,9 +294,17 @@ Access the app at `http://localhost:9000/`.
 
 ## Running Tests
 
+The test suite uses **pytest** (gateway mocks/fixtures are pytest-native).
+Run it from the repository root, where `pytest.ini` points at `core/tests`:
+
 ```bash
-cd core
-python manage.py test accounts
+pytest
+```
+
+Filter to just the OTP flow:
+
+```bash
+pytest core/tests/test_otp.py
 ```
 
 ## Project Structure

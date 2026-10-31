@@ -60,6 +60,11 @@ REST_FRAMEWORK = {
      'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
     ],
+    'DEFAULT_THROTTLE_RATES': {
+        # Extra burst protection on top of the gateway's own limits.
+        'otp_request': '1/min',
+        'otp_verify': '5/min',
+    },
 }
 
 SIMPLE_JWT = {
@@ -70,6 +75,29 @@ SIMPLE_JWT = {
 
 # Google Sign-In (ID token flow)
 GOOGLE_OAUTH_CLIENT_ID = config("GOOGLE_OAUTH_CLIENT_ID", default="")
+
+# Bale OTP Gateway (https://docs.bale.ai/gateway) - NOT part of the Bot API.
+BALE_OTP_CLIENT_ID = config("BALE_OTP_CLIENT_ID", default="")
+BALE_OTP_CLIENT_SECRET = config("BALE_OTP_CLIENT_SECRET", default="")
+BALE_OTP_BASE_URL = config(
+    "BALE_OTP_BASE_URL", default="https://safir.bale.ai/api/v2"
+)
+BALE_OTP_SCOPE = config("BALE_OTP_SCOPE", default="read")
+
+# Safir v3 "send_message" gateway (bot OTP message) - recommended path.
+BALE_API_ACCESS_KEY = config("BALE_API_ACCESS_KEY", default="")
+BALE_BOT_ID = config("BALE_BOT_ID", default=0, cast=int)
+# Which gateway delivers OTP codes: "v3" (send_message, bot OTP message)
+# or "v2" (OAuth client_credentials + /send_otp).
+BALE_OTP_GATEWAY = config("BALE_OTP_GATEWAY", default="v3")
+
+# Phone OTP login
+OTP_CODE_LENGTH = config("OTP_CODE_LENGTH", default=6, cast=int)  # 3-8 digits
+OTP_TTL_SECONDS = config("OTP_TTL_SECONDS", default=120, cast=int)
+OTP_PHONE_HOURLY_LIMIT = config(
+    "OTP_PHONE_HOURLY_LIMIT", default=30, cast=int
+)  # Bale gateway contract: 30/h per phone
+OTP_MAX_ATTEMPTS = config("OTP_MAX_ATTEMPTS", default=5, cast=int)
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

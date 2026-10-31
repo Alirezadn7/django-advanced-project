@@ -37,6 +37,21 @@ class CustomUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
     
+    def create_phone_user(self, phone, **extra_fields):
+        """Create a user logged in through phone OTP (no usable password)."""
+
+        if not phone:
+            raise ValueError(_('The Phone field must be set'))
+
+        # Email is mandatory & unique, so a placeholder mailbox is derived
+        # from the verified phone number of the OTP flow.
+        email = f"{phone}@otp.local"
+
+        user = self.model(email=email, phone=phone, **extra_fields)
+        user.set_unusable_password()
+        user.save(using=self._db)
+        return user
+
     def create_superuser(self , email , password , **extra_fields):
         
         extra_fields.setdefault("is_staff" , True)
