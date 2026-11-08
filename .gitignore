@@ -183,3 +183,8 @@ cython_debug/
 
 # VS Code settings (Linux) or launch settings
 .vscode/
+
+
+# Agents & AI Customizations
+.agents/
+.superpowers/

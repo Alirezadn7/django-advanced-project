@@ -1,0 +1,338 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Synapse. | Systems &amp; Software Architecture Journal{% endblock %}</title>
+
+    <!-- Brand Typography: Outfit (Display) & Plus Jakarta Sans (Body) & JetBrains Mono (Code/Metadata) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS with Typography & Forms plugins -->
+    <script src="https://cdn.tailwindcss.com?plugins=typography,forms,aspect-ratio"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+                        display: ['Outfit', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            200: '#c7d2fe',
+                            300: '#a5b4fc',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                            900: '#312e81',
+                            950: '#1e1b4b',
+                        },
+                        cyber: {
+                            400: '#34d399',
+                            500: '#10b981',
+                            600: '#059669',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Alpine.js for lightweight, reactive micro-interactions -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Dark Mode Init Script (Strict zero-FOUC) -->
+    <script>
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+
+    <style>
+        body {
+            font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+        }
+        /* Custom scrollbar matching brand tokens */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f8fafc;
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: #09090b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #27272a;
+            border-radius: 9999px;
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-zinc-50 text-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 min-h-screen flex flex-col antialiased transition-colors duration-200 selection:bg-brand-500 selection:text-white"
+      x-data="{ mobileMenuOpen: false }">
+
+    <!-- Brand Status Bar -->
+    <div class="bg-zinc-950 text-zinc-300 border-b border-zinc-800/80 text-[11px] py-1.5 px-4 font-mono">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="text-zinc-400">ENGINE:</span>
+                <span class="text-zinc-200 font-semibold tracking-wide">DJANGO 4.2 LTS &bull; REST API &bull; JWT/OTP</span>
+            </div>
+            <div class="hidden sm:flex items-center gap-4 text-zinc-400">
+                <a href="/api/blog/posts/" target="_blank" class="hover:text-brand-300 transition inline-flex items-center gap-1">
+                    <span>/api/blog/posts/</span>
+                </a>
+                <span>&bull;</span>
+                <a href="/api/accounts/otp/test/" class="hover:text-brand-300 transition">Bale OTP Gateway</a>
+                <span>&bull;</span>
+                <a href="/admin/" class="hover:text-brand-300 transition">Studio Console</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Navigation Bar -->
+    <header class="sticky top-0 z-40 bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800/80 transition-colors">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16 sm:h-20">
+                
+                <!-- Brand Mark & Logo (SYNAPSE Geometric Monogram) -->
+                <div class="flex items-center gap-8">
+                    <a href="{% url 'blog-list' %}" class="flex items-center gap-3 group">
+                        <!-- Custom Bespoke Brand Monogram (Hexagonal Converging Nodes) -->
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-700 via-brand-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/25 group-hover:scale-105 group-hover:shadow-brand-500/40 transition-all duration-200">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                                <polyline points="2 17 12 22 22 17" />
+                                <polyline points="2 12 12 17 22 12" />
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="font-display text-xl sm:text-2xl font-black tracking-tight leading-none text-zinc-900 dark:text-white flex items-center">
+                                <span>Synapse</span>
+                                <span class="text-brand-600 dark:text-brand-400">.</span>
+                            </div>
+                            <span class="block text-[9.5px] font-mono text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mt-0.5">Systems &amp; Architecture</span>
+                        </div>
+                    </a>
+
+                    <!-- Desktop Nav Links -->
+                    <nav class="hidden md:flex items-center gap-1 text-sm font-medium">
+                        <a href="{% url 'blog-list' %}" class="px-3.5 py-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-brand-600 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 transition">
+                            Publications
+                        </a>
+                        <a href="{% url 'blog-list' %}#categories" class="px-3.5 py-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-brand-600 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 transition">
+                            Topics
+                        </a>
+                        <a href="/api/blog/posts/" target="_blank" class="px-3.5 py-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-brand-600 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 transition inline-flex items-center gap-1.5">
+                            <span>REST API</span>
+                            <svg class="w-3.5 h-3.5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                        </a>
+                    </nav>
+                </div>
+
+                <!-- Right Tools (Search, Theme, Studio CTA) -->
+                <div class="flex items-center gap-2.5 sm:gap-3">
+                    
+                    <!-- Search Input -->
+                    <form action="{% url 'blog-list' %}" method="GET" class="hidden sm:block relative">
+                        <input type="text" name="q" value="{{ search_query|default:'' }}"
+                               placeholder="Search publications..." 
+                               class="w-48 lg:w-64 pl-9 pr-3.5 py-2 text-xs rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-transparent focus:border-brand-500 focus:bg-white dark:focus:bg-zinc-950 focus:ring-2 focus:ring-brand-500/20 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 transition">
+                        <button type="submit" class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-brand-600 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </button>
+                    </form>
+
+                    <!-- Theme Toggle -->
+                    <button type="button" 
+                            id="theme-toggle"
+                            class="p-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition cursor-pointer"
+                            aria-label="Toggle theme">
+                        <svg id="theme-toggle-light-icon" class="hidden w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path>
+                        </svg>
+                        <svg id="theme-toggle-dark-icon" class="hidden w-4 h-4 text-zinc-700" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+                        </svg>
+                    </button>
+
+                    <!-- Primary Action Button: Write Post -->
+                    <a href="/admin/blog/post/add/" class="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-500 text-white transition shadow-sm shadow-brand-500/25 cursor-pointer">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span>New Post</span>
+                    </a>
+
+                    <!-- Studio Console Link -->
+                    <a href="/admin/" class="hidden lg:inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition cursor-pointer">
+                        <span>Studio Console</span>
+                    </a>
+
+                    <!-- Mobile Menu Button -->
+                    <button @click="mobileMenuOpen = !mobileMenuOpen" 
+                            type="button" 
+                            class="md:hidden p-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300"
+                            aria-label="Open mobile navigation">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path x-show="!mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            <path x-show="mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Navigation Drawer -->
+            <div x-show="mobileMenuOpen" 
+                 x-transition 
+                 @click.away="mobileMenuOpen = false"
+                 class="md:hidden py-4 border-t border-zinc-200 dark:border-zinc-800 space-y-3">
+                <form action="{% url 'blog-list' %}" method="GET" class="relative px-2">
+                    <input type="text" name="q" value="{{ search_query|default:'' }}"
+                           placeholder="Search publications..." 
+                           class="w-full pl-9 pr-3.5 py-2 text-sm rounded-xl bg-zinc-100 dark:bg-zinc-900 border-transparent text-zinc-800 dark:text-zinc-200 placeholder-zinc-400">
+                    <button type="submit" class="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </button>
+                </form>
+
+                <div class="px-2 space-y-1 font-medium text-sm">
+                    <a href="{% url 'blog-list' %}" class="block px-3 py-2 rounded-lg text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900">
+                        Publications
+                    </a>
+                    <a href="/admin/blog/post/add/" class="block px-3 py-2 rounded-lg text-brand-600 dark:text-brand-400 font-semibold hover:bg-brand-50 dark:hover:bg-zinc-900">
+                        + Compose New Article
+                    </a>
+                    <a href="/api/blog/posts/" target="_blank" class="block px-3 py-2 rounded-lg text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900">
+                        REST API Endpoints
+                    </a>
+                    <a href="/api/accounts/otp/test/" class="block px-3 py-2 rounded-lg text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900">
+                        Bale OTP Authentication
+                    </a>
+                    <a href="/admin/" class="block px-3 py-2 rounded-lg text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900">
+                        Studio Admin Console
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Brand Footer -->
+    <footer class="mt-24 border-t border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-950 transition-colors">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
+                <!-- Col 1: Brand Essence -->
+                <div class="md:col-span-2 space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-brand-700 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                                <polyline points="2 17 12 22 22 17" />
+                                <polyline points="2 12 12 17 22 12" />
+                            </svg>
+                        </div>
+                        <span class="font-display text-xl font-black text-zinc-900 dark:text-white">
+                            Synapse<span class="text-brand-500">.</span>
+                        </span>
+                    </div>
+                    <p class="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed max-w-md">
+                        High-signal software architecture, distributed engineering, and systems craftsmanship. Designed for engineers who build for resilience, deterministic performance, and scale.
+                    </p>
+                    <div class="pt-1 flex items-center gap-2 text-xs font-mono text-zinc-400">
+                        <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span>PRODUCTION READY &middot; RELEASE 1.0</span>
+                    </div>
+                </div>
+
+                <!-- Col 2: Publication Links -->
+                <div>
+                    <h3 class="font-mono text-xs uppercase tracking-wider font-bold text-zinc-900 dark:text-white mb-3.5">Publications</h3>
+                    <ul class="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
+                        <li><a href="{% url 'blog-list' %}" class="hover:text-brand-600 dark:hover:text-white transition">All Dissertations</a></li>
+                        <li><a href="/admin/blog/post/add/" class="hover:text-brand-600 dark:hover:text-white transition">Compose Entry</a></li>
+                        <li><a href="/api/blog/posts/" target="_blank" class="hover:text-brand-600 dark:hover:text-white transition">JSON API Stream</a></li>
+                        <li><a href="/api/accounts/otp/test/" class="hover:text-brand-600 dark:hover:text-white transition">Bale OTP Test</a></li>
+                    </ul>
+                </div>
+
+                <!-- Col 3: Architecture Stack -->
+                <div>
+                    <h3 class="font-mono text-xs uppercase tracking-wider font-bold text-zinc-900 dark:text-white mb-3.5">Stack Specifications</h3>
+                    <div class="flex flex-wrap gap-1.5 text-xs font-mono">
+                        <span class="px-2.5 py-1 rounded-md bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-800">Django 4.2</span>
+                        <span class="px-2.5 py-1 rounded-md bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-800">DRF 3.17</span>
+                        <span class="px-2.5 py-1 rounded-md bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-800">SimpleJWT</span>
+                        <span class="px-2.5 py-1 rounded-md bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-800">Tailwind CSS</span>
+                        <span class="px-2.5 py-1 rounded-md bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-800">Docker</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Line -->
+            <div class="pt-6 border-t border-zinc-100 dark:border-zinc-900 flex flex-col sm:flex-row items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 gap-3 font-mono">
+                <p>&copy; 2026 Synapse Journal &middot; Open Systems Architecture.</p>
+                <div class="flex items-center gap-2">
+                    <span>Engineered with Python &amp; Tailwind</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Theme Switcher Script -->
+    <script>
+        const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+        const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+        const themeToggleBtn = document.getElementById('theme-toggle');
+
+        function updateIcons() {
+            if (document.documentElement.classList.contains('dark')) {
+                themeToggleLightIcon.classList.remove('hidden');
+                themeToggleDarkIcon.classList.add('hidden');
+            } else {
+                themeToggleLightIcon.classList.add('hidden');
+                themeToggleDarkIcon.classList.remove('hidden');
+            }
+        }
+        updateIcons();
+
+        themeToggleBtn.addEventListener('click', function() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+            updateIcons();
+        });
+    </script>
+</body>
+</html>

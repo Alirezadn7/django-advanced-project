@@ -10,8 +10,12 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import logging
 from pathlib import Path
-from decouple import config,Csv
+from decouple import config, Csv
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.logging import LoggingIntegration
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -114,7 +118,7 @@ ROOT_URLCONF = "core.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates", BASE_DIR.parent / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -188,3 +192,77 @@ STATICFILES_DIRS = [
 
 # user manager config
 AUTH_USER_MODEL = 'accounts.User'   
+
+# Sentry Observability & Error Monitoring
+def init_sentry(dsn=None, environment="development", traces_sample_rate=1.0):
+    """
+    Initialize Sentry SDK with Django and Logging integrations.
+    Returns True if initialized, False if dsn is empty.
+    """
+    if not dsn:
+        return False
+    sentry_logging = LoggingIntegration(
+        level=logging.INFO,        # Capture info and above as breadcrumbs
+        event_level=logging.ERROR  # Send errors and criticals as Sentry events
+    )
+    sentry_sdk.init(
+        dsn=dsn,
+        integrations=[DjangoIntegration(), sentry_logging],
+        traces_sample_rate=traces_sample_rate,
+        send_default_pii=False,
+        environment=environment,
+    )
+    return True
+
+SENTRY_DSN = config("SENTRY_DSN", default="")
+SENTRY_ENVIRONMENT = config("SENTRY_ENVIRONMENT", default="development")
+SENTRY_TRACES_SAMPLE_RATE = config(
+    "SENTRY_TRACES_SAMPLE_RATE", default=1.0, cast=float
+)
+
+init_sentry(
+    dsn=SENTRY_DSN,
+    environment=SENTRY_ENVIRONMENT,
+    traces_sample_rate=SENTRY_TRACES_SAMPLE_RATE,
+)
+
+# Logging Configuration
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "standard": {
+            "format": "[%(asctime)s] %(levelname)s %(name)s (%(lineno)d): %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+    },
+    "handlers": {
+        "console": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "standard",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": True,
+        },
+        "core": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": True,
+        },
+        "accounts": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": True,
+        },
+        "blog": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": True,
+        },
+    },
+}

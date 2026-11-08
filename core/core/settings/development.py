@@ -8,7 +8,7 @@ SIMPLE_JWT.update({
     'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
 })
 
-ALLOWED_HOSTS.append("127.0.0.1")
+ALLOWED_HOSTS = ["*"]
 
 
 
