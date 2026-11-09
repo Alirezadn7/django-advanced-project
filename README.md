@@ -1,25 +1,22 @@
-# Django Advanced Blog API
+# Django Advanced Blog
 
-A backend-only blog project built with **Django** and **Django REST Framework**, focusing on applying advanced web development concepts in a practical project.
+A full-featured blog application built with **Django** and **Django REST Framework**, offering both a clean server-rendered frontend and a robust REST API, advanced authentication methods, and observability.
 
 ## About the Project
 
-The main goal of this project is to learn and properly implement modern backend development concepts and technologies using Django.
-
-The project focuses on building a clean and well-structured backend while working with APIs, authentication, database management, and other backend concepts.
-
-This project includes backend development only and does not contain a frontend.
+The main goal of this project is to implement modern backend and web development concepts in Django, including modular architecture, multiple authentication strategies, responsive server-rendered UI, and production-ready error monitoring.
 
 ## Tech Stack
 
 | Technology | Usage |
 |------------|-------|
 | Python 3.12 | Core language |
-| Django 4.2 | Web framework |
+| Django 4.2 | Web framework & SSR frontend templates |
 | Django REST Framework 3.17 | API toolkit |
 | SimpleJWT 5.5 | JWT authentication (rotation + blacklist) |
 | google-auth 2.62 | Google Sign-In ID token verification |
 | requests 2.32 | Bale OTP gateway HTTP client |
+| sentry-sdk 2.53 | Error monitoring & performance tracing |
 | django-filter 24.3 | API filtering |
 | Pillow 12.2 | Image upload support |
 | python-decouple 3.8 | Environment configuration |
@@ -28,16 +25,21 @@ This project includes backend development only and does not contain a frontend.
 
 ## Features
 
+### Web Frontend (Templates)
+- **Public Blog Pages**: Clean, responsive UI with Tailwind CSS.
+- **Post Listing (`/`)**: Search by title/content, category filtering, and pagination.
+- **Post Detail (`/post/<slug>/`)**: Markdown rendering, author info, publication date, categories, and tags.
+- **Seed Data Command**: Easily populate the database with realistic sample posts and categories.
+
 ### Accounts & Authentication
 - Custom email-based user model (`AbstractBaseUser`)
 - Automatic profile creation via signal
 - JWT login, refresh, and logout (token blacklisting)
-- Google Sign-In (Gmail) — verifies Google ID tokens and returns the same JWT pair
-- Phone OTP login via the **Bale.ai Gateway** (Safir `send_message`)
+- Google Sign-In (Gmail) — verifies Google ID tokens and returns standard JWT pair
+- Phone OTP login via **Bale.ai Gateway** (Safir `send_message`)
 - Profile retrieval/update and password change endpoints
-- Fully tested (`core/tests/`)
 
-### Blog
+### Blog API
 - `Post`, `Category`, and `Tag` models
 - Auto-generated Unicode slugs (Persian/English supported) with collision handling
 - Slug-based routing (e.g. `/api/blog/posts/my-post-slug/`)
@@ -45,9 +47,22 @@ This project includes backend development only and does not contain a frontend.
 - Optimized queries (`select_related` / `prefetch_related`)
 - Filtering, searching, ordering, and pagination
 
+### Monitoring & Logging
+- **Sentry Integration**: Automatic exception tracking and performance tracing via `sentry-sdk`.
+- **Structured Console Logging**: Formatted request and error logs for development and production.
+- **Debug Trigger**: Dev endpoint at `/sentry-debug/` to verify Sentry event capture.
+
 ## API Endpoints
 
-### Accounts (`/api/accounts/`)
+### Web Pages
+
+| Route | View | Description |
+|-------|------|-------------|
+| `/` | `BlogListView` | Public post listing with search, category filters, and pagination |
+| `/post/<slug>/` | `BlogDetailView` | Full blog post detail page with markdown support |
+| `/sentry-debug/` | `trigger_error` | Error trigger view to test Sentry exception capture |
+
+### Accounts API (`/api/accounts/`)
 
 | Method | Endpoint | Access |
 |--------|----------|--------|
@@ -279,10 +294,11 @@ Edit `.env` and set a real `SECRET_KEY`, then:
 cd core
 python manage.py makemigrations
 python manage.py migrate
+python manage.py seed_blog   # (Optional) Seed sample categories and posts
 python manage.py runserver
 ```
 
-API available at `http://127.0.0.1:8000/`.
+Open `http://127.0.0.1:8000/` for the web blog interface or `http://127.0.0.1:8000/api/` for the REST API.
 
 ### Docker
 
@@ -312,10 +328,11 @@ pytest core/tests/test_otp.py
 ```text
 django-advanced-project/
 ├── core/
-│   ├── accounts/          # Authentication, profile, JWT
-│   ├── blog/               # Post, Category, Tag
-│   ├── core/               # Settings, URLs, WSGI/ASGI
-│   │   └── settings/       # base, development, production
+│   ├── accounts/          # Authentication, profile, JWT, Bale OTP, Google Sign-In
+│   ├── blog/              # Post, Category, Tag (API + SSR views & seed command)
+│   ├── templates/         # Server-rendered frontend templates (base, list, detail)
+│   ├── core/              # Settings, URLs, WSGI/ASGI
+│   │   └── settings/      # base, development, production
 │   └── manage.py
 ├── docker-compose.yml
 ├── dockerfile
@@ -328,7 +345,7 @@ django-advanced-project/
 
 - The project currently uses **SQLite** for development; switch to PostgreSQL for production.
 - `core.settings` is loaded via `DJANGO_SETTINGS_MODULE`; production deployment should point to `core.settings.production`.
-- This is a backend-only project with no frontend included.
+- Sentry error monitoring is enabled by supplying `SENTRY_DSN` in `.env`.
 
 ## Status
 
