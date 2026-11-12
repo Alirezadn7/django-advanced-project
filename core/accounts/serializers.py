@@ -177,6 +177,36 @@ class ChangePasswordSerializer(serializers.Serializer):
         except DjangoValidationError as e:
             raise serializers.ValidationError(list(e))
         return value
+
+
+class AuthTokenResponseSerializer(serializers.Serializer):
+    """Response payload returned by password, Google, and OTP login endpoints."""
+
+    refresh = serializers.CharField()
+    access = serializers.CharField()
+    id = serializers.IntegerField()
+    email = serializers.EmailField()
+    first_name = serializers.CharField(allow_blank=True)
+
+
+class OtpRequestResponseSerializer(serializers.Serializer):
+    """Response payload returned when an OTP SMS/message is queued."""
+
+    detail = serializers.CharField()
+    expires_in = serializers.IntegerField()
+    message_id = serializers.CharField(allow_null=True, required=False)
+
+
+class MessageResponseSerializer(serializers.Serializer):
+    """Generic message response payload."""
+
+    message = serializers.CharField()
+
+
+class DetailResponseSerializer(serializers.Serializer):
+    """Generic error/detail response payload."""
+
+    detail = serializers.CharField()
     
 
     

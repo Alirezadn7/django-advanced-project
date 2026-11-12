@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
     "django_filters",
+    "drf_spectacular",
     
     # Local
     "accounts",
@@ -54,6 +55,7 @@ INSTALLED_APPS = [
 ]
 
 REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
@@ -69,6 +71,17 @@ REST_FRAMEWORK = {
         'otp_request': '1/min',
         'otp_verify': '5/min',
     },
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Django Advanced Blog API',
+    'DESCRIPTION': 'REST API for user authentication (JWT, Google Sign-In, Bale OTP) and blog management.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    # ReDoc 3.x standalone bundle is an ES module (uses import.meta), which breaks
+    # drf-spectacular's classic <script src="..."> tag; pin to ReDoc 2.x.
+    'REDOC_DIST': 'https://cdn.jsdelivr.net/npm/redoc@2',
 }
 
 SIMPLE_JWT = {

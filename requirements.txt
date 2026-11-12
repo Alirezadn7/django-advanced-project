@@ -11,3 +11,4 @@ pytest-django~=4.9
 google-auth[requests]~=2.35
 requests~=2.32
 sentry-sdk~=2.0
+drf-spectacular~=0.30.0

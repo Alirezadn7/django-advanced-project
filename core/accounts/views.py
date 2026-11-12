@@ -1,4 +1,5 @@
 from django.views.generic import TemplateView
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics, mixins, permissions, status, viewsets
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
@@ -7,10 +8,14 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import Profile
 from .serializers import (
+    AuthTokenResponseSerializer,
     ChangePasswordSerializer,
     CustomTokenObtainPairSerializer,
+    DetailResponseSerializer,
     GoogleLoginSerializer,
     LogoutSerializer,
+    MessageResponseSerializer,
+    OtpRequestResponseSerializer,
     OtpRequestSerializer,
     OtpVerifySerializer,
     ProfileSerializers,
@@ -40,11 +45,19 @@ class TokenObtainPairView(TokenObtainPairView):
     
     serializer_class = CustomTokenObtainPairSerializer
 
+    @extend_schema(responses={200: AuthTokenResponseSerializer})
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
 class GoogleLoginAPIView(APIView):
     """Authenticate with a Google ID token and return SimpleJWT tokens."""
     
     permission_classes = [permissions.AllowAny]
-    
+
+    @extend_schema(
+        request=GoogleLoginSerializer,
+        responses={200: AuthTokenResponseSerializer},
+    )
     def post(self, request, *args, **kwargs):
         serializer = GoogleLoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -58,7 +71,11 @@ class LogoutAPIView(generics.GenericAPIView):
     
     serializer_class = LogoutSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
+
+    @extend_schema(
+        request=LogoutSerializer,
+        responses={205: MessageResponseSerializer},
+    )
     def post(self , request):
         serializer = self.get_serializer(data = request.data)
         serializer.is_valid(raise_exception = True)
@@ -80,6 +97,15 @@ class OtpRequestAPIView(APIView):
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "otp_request"
 
+    @extend_schema(
+        request=OtpRequestSerializer,
+        responses={
+            200: OtpRequestResponseSerializer,
+            400: DetailResponseSerializer,
+            429: DetailResponseSerializer,
+            502: DetailResponseSerializer,
+        },
+    )
     def post(self, request, *args, **kwargs):
         serializer = OtpRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -114,6 +140,13 @@ class OtpVerifyAPIView(APIView):
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "otp_verify"
 
+    @extend_schema(
+        request=OtpVerifySerializer,
+        responses={
+            200: AuthTokenResponseSerializer,
+            400: DetailResponseSerializer,
+        },
+    )
     def post(self, request, *args, **kwargs):
         serializer = OtpVerifySerializer(
             data=request.data,
@@ -138,7 +171,11 @@ class OtpTestPageView(TemplateView):
 class ChangePasswordAPIView(APIView):
     
     permission_classes = [permissions.IsAuthenticated]
-    
+
+    @extend_schema(
+        request=ChangePasswordSerializer,
+        responses={200: MessageResponseSerializer},
+    )
     def post(self , request ,*args , **kwargs):
         serializer = ChangePasswordSerializer(data = request.data , context={'request':request})
         serializer.is_valid(raise_exception=True)
